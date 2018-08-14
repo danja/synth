@@ -1,40 +1,40 @@
 /* noise-lfsr.ino
- *  
- *  White Noise Generator
- *  
- *  approximating 16-bit, using 2 PWM outputs
- *  
- *  uses the skeleton code from adc_to_pwm.pde for the 16 bit output (see below), 
- *  using the pseudorandom noise generator algorithm at:
- *  https://en.wikipedia.org/wiki/Linear-feedback_shift_register#Galois_LFSRs
- *  
- *  write-up at : https://elfquake.wordpress.com/2018/08/08/arduino-white-noise-generator/
- *  
- *  demo video at: https://youtu.be/RBWBqGr3Lzc
- *  
- *  Circuit:
- *  
- 
-D9 ---- 1k --------------|
 
-D10 --- 200k --- 56k ----|---> OUT
+    White Noise Generator
+
+    approximating 16-bit, using 2 PWM outputs
+
+    uses the skeleton code from adc_to_pwm.pde for the 16 bit output (see below),
+    using the pseudorandom noise generator algorithm at:
+    https://en.wikipedia.org/wiki/Linear-feedback_shift_register#Galois_LFSRs
+
+    write-up at : https://elfquake.wordpress.com/2018/08/08/arduino-white-noise-generator/
+
+    demo video at: https://youtu.be/RBWBqGr3Lzc
+
+    Circuit:
+
+
+  D9 ---- 1k --------------|
+
+  D10 --- 200k --- 56k ----|---> OUT
                          |
                     10n ===
                          |
                          |
                         GND
- *  
- *  
- *  danny.ayers@gmail.com
- *  
-// ADC to PWM converter
-// guest - openmusiclabs.com - 1.9.13
-// options table at http://wiki.openmusiclabs.com/wiki/PWMDAC
-// takes in audio data from the ADC and plays it out on
-// Timer1 PWM.  16b, Phase Correct, 31.25kHz - although ADC is 10b.
+
+
+    danny.ayers@gmail.com
+
+  // ADC to PWM converter
+  // guest - openmusiclabs.com - 1.9.13
+  // options table at http://wiki.openmusiclabs.com/wiki/PWMDAC
+  // takes in audio data from the ADC and plays it out on
+  // Timer1 PWM.  16b, Phase Correct, 31.25kHz - although ADC is 10b.
 
  *  */
- 
+
 #define PWM_FREQ 0x00FF // pwm frequency - see table
 #define PWM_MODE 1 // Fast (1) or Phase Correct (0)
 #define PWM_QTY 2 // number of pwms, either 1 or 2
@@ -43,7 +43,7 @@ uint16_t start_state = 0xACE1u;  /* Any nonzero start state will work. */
 uint16_t lfsr = start_state;
 unsigned period = 0;
 
-uint16_t ramp = 0;
+uint8_t ramp = 0;
 
 void setup() {
 
@@ -57,7 +57,7 @@ void setup() {
   // setup PWM
   TCCR1A = (((PWM_QTY - 1) << 5) | 0x80 | (PWM_MODE << 1)); //
   TCCR1B = ((PWM_MODE << 3) | 0x11); // ck/1
-  TIMSK1 = 0x20; // interrupt on capture interrupt
+  TIMSK1 = 0x20; // interrupt on capture interruptleft
   ICR1H = (PWM_FREQ >> 8);
   ICR1L = (PWM_FREQ & 0xff);
   DDRB |= ((PWM_QTY << 1) | 0x02); // turn on outputs
@@ -93,6 +93,12 @@ ISR(TIMER1_CAPT_vect) {
   temp1 = lfsr & 0xFF00u;
   temp2 = lfsr & 0x00FFu;
 
+  ramp++;
+
+if(ramp == ADCH) ramp = 0;
+
+ // temp2 = temp2 >> 1 + ramp;
+ // temp2 = ramp;
 
   // output high byte on OC1A
   OCR1AH = temp2 >> 8; // takes top 8 bits
