@@ -1,8 +1,6 @@
-/* noise-lfsr.ino
+/* scruncher.ino
  *  
- *  White Noise Generator
- *  
- *  approximating 16-bit, using 2 PWM outputs
+ * chaotic system driven by white noise
  *  
  *  uses the skeleton code from adc_to_pwm.pde for the 16 bit output (see below), 
  *  using the pseudorandom noise generator algorithm at:
@@ -67,12 +65,8 @@ uint16_t temp3;
 
 void setup() {
 
- Serial.begin(9600);
-  // setup ADC
-  ADMUX = 0x60; // left adjust, adc0, internal vcc
-  ADCSRA = 0xe5; // turn on adc, ck/32, auto trigger
-  ADCSRB = 0x07; // t1 capture for trigger
-  DIDR0 = 0x01; // turn off digital inputs for adc0
+ // Serial.begin(9600);
+ 
 
   // setup PWM
   TCCR1A = (((PWM_QTY - 1) << 5) | 0x80 | (PWM_MODE << 1)); //
@@ -126,10 +120,8 @@ ISR(TIMER1_CAPT_vect) {
   OCR1BL = temp1;
   */
 
-  noise_level = analogRead(NOISE_LEVEL_PIN);
+  noise_level = analogRead(NOISE_LEVEL_PIN); // will be 0 - 1023
   r_value = analogRead(R_VALUE_PIN);
-
-
 
   r = 3 + ((float)r_value)/1024;
 
@@ -137,19 +129,18 @@ ISR(TIMER1_CAPT_vect) {
 
   x_scale = 1 - noise_scale;
 
-  
   noise = noise_scale * ((float)lfsr)/65536;
 
   // Serial.println(noise); 
   
 
   x = x_scale * x + noise;
+  
 // logistic map 
-
   x = r * x * (1 - x);
-// temp3 = (uint16_t)(x * 65536); // scale & cast
 
-temp3 = (uint16_t)(noise * 32768); // scale & cast
+
+temp3 = (uint16_t)(x * 65536); // scale & cast
 
 
     temp1 = temp3 & 0xFF00u;
